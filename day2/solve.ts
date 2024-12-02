@@ -24,21 +24,5 @@ function countWeekSafe(reports: number[][]) {
     ).filter((b) => b).length;
 }
 console.log(
-    countWeekSafe(reports),
+    `weekSafes: ${countWeekSafe(reports)}`,
 );
-const weekSafeCounts = reports.map((levels, i) => {
-    levels.slice(0).splice(0, 1);
-    const ps = levels.slice(0, -1);
-    const ns = levels.slice(1);
-    let diffs = ns.map((n, i) => n - ps[i]);
-    if (diffs[0] < 0) {
-        if (diffs[1] < 0) {
-            if (diffs) {
-                diffs = diffs.map((n) => -n);
-            }
-        }
-    }
-    return diffs.filter((n) => n < 1 || 3 < n).length <= 1;
-}).filter((b) => b).length;
-
-console.log(`weekSafes: ${weekSafeCounts}`);
