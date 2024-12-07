@@ -12,7 +12,8 @@ function valid(goal: number, nums: number[]) {
     const tail = nums.slice(1);
     const pv = head + tail[0];
     const mv = head * tail[0];
-    for (const v of [pv, mv]) {
+    const cv = Number(`${head}${tail[0]}`);
+    for (const v of [pv, mv, cv]) {
         if (v > goal) {
             continue;
         }
@@ -22,11 +23,11 @@ function valid(goal: number, nums: number[]) {
     }
     return false;
 }
-const a1 = equations.map(({ goal, nums }) => valid(goal, nums) ? goal : 0)
+const a2 = equations.map(({ goal, nums }) => valid(goal, nums) ? goal : 0)
     .reduce((
         a,
         v,
     ) => a + v);
 console.log(
-    `a1: ${a1}`,
+    `a2: ${a2}`,
 );
