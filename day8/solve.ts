@@ -20,13 +20,13 @@ for (let i = 0; i < row; i++) {
             const di = i - pos.i;
             const dj = j - pos.j;
             const p = { i: pos.i, j: pos.j };
-            while (p.i >= 0 && p.j >= 0) {
+            while (p.i >= 0 && p.j >= 0 && p.i < row && p.j < col) {
                 p.i -= di;
                 p.j -= dj;
             }
             for (
                 p.i += di, p.j += dj;
-                p.i < row && p.j < col;
+                p.i < row && p.j < col && p.i >= 0 && p.j >= 0;
                 p.i += di, p.j += dj
             ) {
                 if (antis[p.i]?.[p.j] === ".") {
