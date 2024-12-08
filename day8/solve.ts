@@ -17,14 +17,17 @@ for (let i = 0; i < row; i++) {
         }
         const list = dict.get(mark) ?? [];
         for (const pos of list) {
+            const di = i - pos.i;
+            const dj = j - pos.j;
+            const p = { i: pos.i, j: pos.j };
+            while (p.i >= 0 && p.j >= 0) {
+                p.i -= di;
+                p.j -= dj;
+            }
             for (
-                const p of [{
-                    i: 2 * i - pos.i,
-                    j: 2 * j - pos.j,
-                }, {
-                    i: 2 * pos.i - i,
-                    j: 2 * pos.j - j,
-                }]
+                p.i += di, p.j += dj;
+                p.i < row && p.j < col;
+                p.i += di, p.j += dj
             ) {
                 if (antis[p.i]?.[p.j] === ".") {
                     antis[p.i][p.j] = "#";
@@ -35,5 +38,4 @@ for (let i = 0; i < row; i++) {
         dict.set(mark, [...list, { i, j }]);
     }
 }
-console.log(map.map((r) => r.join("")).join("\n"));
 console.log(`antinodes: ${count}`);
