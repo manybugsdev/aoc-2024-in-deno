@@ -1,58 +1,7 @@
 type TreeNode = {
     value: number;
-    isOrigin: boolean;
     children: TreeNode[];
 };
-
-function searchOrigin(value: number, root: TreeNode): TreeNode | undefined {
-    if (root.value === value && root.isOrigin) {
-        return root;
-    }
-    if (!root.isOrigin) {
-        return undefined;
-    }
-    for (const child of root.children) {
-        const result = searchOrigin(value, child);
-        if (result) {
-            return result;
-        }
-    }
-    return undefined;
-}
-
-function countLineNodes(
-    root: TreeNode,
-    depth: number,
-    trueRoot = root,
-): number {
-    const cache = new Map<number, Map<number, number>>();
-    if (!root.isOrigin) {
-        return countLineNodes(
-            searchOrigin(root.value, trueRoot)!,
-            depth,
-            trueRoot,
-        );
-    }
-    if (depth < 1) {
-        return 1;
-    }
-    return root.children.reduce(
-        (acc, child) => acc + countLineNodes(child, depth - 1, trueRoot),
-        0,
-    );
-}
-
-function getLeafs(
-    root: TreeNode,
-): TreeNode[] {
-    if (!root.isOrigin) {
-        return [];
-    }
-    if (root.children.length === 0) {
-        return [root];
-    }
-    return root.children.flatMap((c) => getLeafs(c));
-}
 
 function blink(stone: number): number[] {
     const text = String(stone);
@@ -65,30 +14,62 @@ function blink(stone: number): number[] {
     return [stone * 2024];
 }
 
-function calcStoneNum(input: string, blinkCount: number): number {
-    const root: TreeNode = {
-        value: -1,
-        isOrigin: true,
-        children: [],
-    };
-    for (const stone of input.split(" ").map(Number)) {
-        root.children.push({
-            value: stone,
-            isOrigin: !searchOrigin(stone, root),
-            children: [],
-        });
+function search(
+    value: number,
+    node: TreeNode,
+    visited: Set<number> = new Set(),
+): TreeNode | undefined {
+    if (node.value === value) {
+        return node;
     }
-    for (let i = 0; i < blinkCount; i++) {
-        const leafs = getLeafs(root);
-        for (const leaf of leafs) {
-            leaf.children = blink(leaf.value).map((value) => ({
-                value,
-                isOrigin: !searchOrigin(value, root),
-                children: [],
-            }));
+    if (visited.has(node.value)) {
+        return undefined;
+    }
+    visited.add(node.value);
+    for (const child of node.children) {
+        const result = search(value, child, visited);
+        if (result) {
+            return result;
         }
     }
-    return countLineNodes(root, blinkCount + 1);
+    return undefined;
+}
+
+function calcStoneNum(input: string, blinkCount: number): number {
+    // initialize root
+    const root: TreeNode = {
+        value: -1,
+        children: [],
+    };
+    let leafMap = new Map<number, number>();
+    for (const stone of input.split(" ").map(Number)) {
+        leafMap.set(stone, (leafMap.get(stone) ?? 0) + 1);
+        root.children.push(
+            search(stone, root) ?? {
+                value: stone,
+                children: [],
+            },
+        );
+    }
+    // blinking
+    for (let i = 0; i < blinkCount; i++) {
+        leafMap = leafMap.entries().reduce((m, [stone, count]) => {
+            const node = search(stone, root);
+            if (!node) {
+                throw new Error(`Why???: ${stone}`);
+            }
+            if (node.children.length === 0) {
+                node.children = blink(node.value).map((value) =>
+                    search(value, root) ?? { value, children: [] }
+                );
+            }
+            for (const child of node.children) {
+                m.set(child.value, (m.get(child.value) ?? 0) + count);
+            }
+            return m;
+        }, new Map());
+    }
+    return leafMap.values().reduce((acc, count) => acc + count, 0);
 }
 
 if (import.meta.main) {
