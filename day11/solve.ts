@@ -24,22 +24,30 @@ function countLineNodes(
     root: TreeNode,
     depth: number,
     trueRoot = root,
+    cache = new Map<number, Map<number, number>>(),
 ): number {
-    const cache = new Map<number, Map<number, number>>();
+    const c = cache.get(root.value)?.get(depth);
+    if (c) {
+        return c;
+    }
     if (!root.isOrigin) {
         return countLineNodes(
             searchOrigin(root.value, trueRoot)!,
             depth,
             trueRoot,
+            cache,
         );
     }
     if (depth < 1) {
+        cache.set(root.value, new Map([[depth, 1]]));
         return 1;
     }
-    return root.children.reduce(
-        (acc, child) => acc + countLineNodes(child, depth - 1, trueRoot),
+    const count = root.children.reduce(
+        (acc, child) => acc + countLineNodes(child, depth - 1, trueRoot, cache),
         0,
     );
+    cache.set(root.value, cache.get(root.value) ?? new Map().set(depth, count));
+    return count;
 }
 
 function getLeafs(
