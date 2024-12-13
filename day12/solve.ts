@@ -1,66 +1,61 @@
+type Memo = Map<number, Map<number, boolean>>;
+
+function memorize(memo: Memo, i: number, j: number) {
+    memo.set(i, (memo.get(i) ?? new Map()).set(j, true));
+}
+
+function exists(memo: Memo, i: number, j: number) {
+    return !!memo.get(i)?.get(j);
+}
+
 function around(i: number, j: number) {
     return [[i - 1, j], [i, j + 1], [i + 1, j], [i, j - 1]];
 }
 
-function calcAreaByPosition(
+function perimeter(map: string[][], i: number, j: number, memo: Memo): number {
+    if (exists(memo, i, j)) {
+        return 0;
+    }
+    const ch = map[i]?.[j];
+    if (!ch) {
+        return 0;
+    }
+    memorize(memo, i, j);
+    const sames = around(i, j).filter(([i, j]) => map[i]?.[j] === ch);
+    return sames.reduce(
+        (sum, [i, j]) => sum + perimeter(map, i, j, memo),
+        4 - sames.length,
+    );
+}
+
+function area(
     map: string[][],
-    region: string,
     i: number,
     j: number,
-    visitedMap = new Map<number, Map<number, boolean>>(),
+    memo: Memo,
 ): number {
-    if (map[i]?.[j] !== region) {
+    if (exists(memo, i, j)) {
         return 0;
     }
-    if (visitedMap.get(i)?.get(j)) {
+    const ch = map[i]?.[j];
+    if (!ch) {
         return 0;
     }
-    visitedMap.set(
-        i,
-        (visitedMap.get(i) ?? new Map<number, boolean>()).set(j, true),
-    );
-    return around(i, j).reduce(
-        (area, [i, j]) =>
-            area + calcAreaByPosition(map, region, i, j, visitedMap),
+    memorize(memo, i, j);
+    return around(i, j).filter(([i, j]) => map[i]?.[j] === ch).reduce(
+        (sum, [i, j]) => sum + area(map, i, j, memo),
         1,
     );
 }
 
-function calcPerimeterByPosition(
-    map: string[][],
-    region: string,
-    i: number,
-    j: number,
-    mask: number = 0b0000,
-    visitedMap = new Map<number, Map<number, number>>(),
-): number {
-    if (map[i]?.[j] !== region) {
-        return 0;
-    }
-
-    return 1;
-}
-
-function calcArea(map: string[][], region: string): number {
-    const visitedMap = new Map<number, Map<number, boolean>>();
-    let area = 0;
-    for (let i = 0; i < map.length; i++) {
-        for (let j = 0; j < map[i].length; j++) {
-            area += calcAreaByPosition(map, region, i, j, visitedMap);
-        }
-    }
-    return area;
-}
-
-function calcPerimeter(map: string[][], region: string): number {
-    return 1;
-}
-
-function calcTotalPrice(input: string): number {
-    const map = input.split("\n").map((line) => line.split(""));
-    return new Set(map.flat()).values().reduce(
-        (total, region) =>
-            total + calcArea(map, region) * calcPerimeter(map, region),
+function priceTotal(input: string): number {
+    const map = input.split("\n").map((r) => r.split(""));
+    const am: Memo = new Map();
+    const pm: Memo = new Map();
+    return map.flatMap((line, i) => line.map((_, j) => ({ i, j }))).reduce(
+        (sum, { i, j }) => (
+            sum + area(map, i, j, am) * perimeter(map, i, j, pm)
+        ),
         0,
     );
 }
@@ -68,17 +63,6 @@ function calcTotalPrice(input: string): number {
 if (import.meta.main) {
     const input = await Deno.readTextFile("input.txt");
     console.log(
-        `totalPrice: ${
-            calcTotalPrice(`RRRRIICCFF
-RRRRIICCCF
-VVRRRCCFFF
-VVRCCCJFFF
-VVVVCJJCFE
-VVIVCCJJEE
-VVIIICJJEE
-MIIIIIJJEE
-MIIISIJEEE
-MMMISSJEEE`)
-        }`,
+        `priceTotal: ${priceTotal(input)}`,
     );
 }
