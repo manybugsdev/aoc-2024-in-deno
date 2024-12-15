@@ -1,10 +1,3 @@
-function getButtonCombinationWithFewestToken(
-    fewestTokens: number[][],
-    totalButtonCount: number,
-) :[number, number] {
-    return fewestTokens.reduce(())
-}
-
 function getFewestToken(
     ax: number,
     ay: number,
@@ -13,16 +6,28 @@ function getFewestToken(
     px: number,
     py: number,
 ): number {
-    const n = 100;
-    // table[acount][bcount] = fewest tokens
-    const table = Array.from(
-        { length: n },
-        () => Array.from({ length: n }, () => 0),
-    );
-    // push button
-    for (let i = 0; i < n; i++) {
+    // inverse matrix solution
+    //
+    // |ax bx||a| = |px|
+    // |ay by||b|   |py|
+    //
+    // |a| = 1/(axby - aybx) |by -bx||px|
+    // |b|                   |-ay ax||py|
+    const det = ax * by - ay * bx;
+    if (det === 0) {
+        return 0;
     }
-    return 1;
+    let a = by * px - bx * py;
+    let b = -ay * px + ax * py;
+    if (a % det !== 0 || b % det !== 0) {
+        return 0;
+    }
+    a /= det;
+    b /= det;
+    if (a < 0 || b < 0) {
+        return 0;
+    }
+    return 3 * a + b;
 }
 
 function getFewestTokens(input: string): number {
