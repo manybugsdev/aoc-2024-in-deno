@@ -92,15 +92,35 @@ function getTotalPrice(input: string): number {
 }
 
 function getSide(region: Region) {
-    const elements = region.elements;
-    const checked: RegionElement[] = [];
+    const elements = region.elements.map((el) => ({ ...el }));
+    const checked = [] as RegionElement[];
+    let side = 0;
     for (const el of elements) {
-        const ars = checked.filter(({ i, j }) =>
+        side += countBits(el.fence);
+        const cels = checked.filter(({ i, j }) =>
             around(el.i, el.j).find(([ai, aj]) => ai == i && aj == j)
         );
-        // solving
+        for (const cel of cels) {
+            if (el.i === cel.i) {
+                if (el.fence & cel.fence & 0b0001) { // lbrt
+                    side--;
+                }
+                if (el.fence & cel.fence & 0b0100) {
+                    side--;
+                }
+            }
+            if (el.j === cel.j) {
+                if (el.fence & cel.fence & 0b0010) {
+                    side--;
+                }
+                if (el.fence & cel.fence & 0b1000) {
+                    side--;
+                }
+            }
+        }
+        checked.push(el);
     }
-    return checked.reduce((s, { fence }) => s + countBits(fence), 0);
+    return side;
 }
 
 function getDiscountedTotalPrice(input: string): number {
@@ -115,33 +135,10 @@ function getDiscountedTotalPrice(input: string): number {
 if (import.meta.main) {
     const input = await Deno.readTextFile("input.txt");
     console.log(
-        `TotalPrice: ${
-            getTotalPrice(`RRRRIICCFF
-RRRRIICCCF
-VVRRRCCFFF
-VVRCCCJFFF
-VVVVCJJCFE
-VVIVCCJJEE
-VVIIICJJEE
-MIIIIIJJEE
-MIIISIJEEE
-MMMISSJEEE`)
-        }`,
+        `TotalPrice: ${getTotalPrice(input)}`,
     );
-    /*
+
     console.log(
-        `priceTotalDiscounted: ${
-            priceTotalDiscounted(`RRRRIICCFF
-RRRRIICCCF
-VVRRRCCFFF
-VVRCCCJFFF
-VVVVCJJCFE
-VVIVCCJJEE
-VVIIICJJEE
-MIIIIIJJEE
-MIIISIJEEE
-MMMISSJEEE`)
-        }`,
+        `DiscountedTotalPrice: ${getDiscountedTotalPrice(input)}`,
     );
-    */
 }
