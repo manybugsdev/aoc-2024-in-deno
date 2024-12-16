@@ -3,69 +3,81 @@ type Robot = {
     velocity: [number, number];
 };
 
-function animRobots(input: string): void {
-    const robots = input.split("\n").map((line) => {
+function parseInput(input: string): Robot[] {
+    return input.split("\n").map((line) => {
         const [x, y, vx, vy] = line.match(/-?\d+/g)!.map(Number);
         return { position: [x, y], velocity: [vx, vy] } as Robot;
     });
-    const wide = 101;
-    const tall = 103;
-    setInterval(() => {
-        for (const robot of robots) {
-            robot.position[0] += robot.velocity[0];
-            robot.position[1] += robot.velocity[1];
-            if (robot.position[0] < 0) {
-                robot.position[0] = wide + robot.position[0];
-            }
-            if (robot.position[1] < 0) {
-                robot.position[1] = tall + robot.position[1];
-            }
-            robot.position[0] %= wide;
-            robot.position[1] %= tall;
-        }
-        console.clear();
-        console.log(
+}
+
+function toString(robots: Robot[], wide: number, tall: number): string {
+    return Array.from(
+        { length: tall },
+        (_, y) =>
             Array.from(
-                { length: tall },
-                (_, y) =>
-                    Array.from(
-                        { length: wide },
-                        (_, x) =>
-                            robots.some(
-                                    (robot) =>
-                                        robot.position[0] === x &&
-                                        robot.position[1] === y,
-                                )
-                                ? "#"
-                                : " ",
-                    ).join(""),
-            ).join("\n"),
-        );
+                { length: wide },
+                (_, x) =>
+                    robots.some(
+                            (robot) =>
+                                robot.position[0] === x &&
+                                robot.position[1] === y,
+                        )
+                        ? "#"
+                        : " ",
+            ).join(""),
+    ).join("\n");
+}
+
+function runStep(robots: Robot[], wide: number, tall: number): Robot[] {
+    return robots.map((robot) => {
+        const r: Robot = {
+            position: [
+                robot.position[0] + robot.velocity[0],
+                robot.position[1] + robot.velocity[1],
+            ],
+            velocity: robot.velocity,
+        };
+        if (r.position[0] < 0) {
+            r.position[0] = wide + r.position[0];
+        }
+        if (r.position[1] < 0) {
+            r.position[1] = tall + r.position[1];
+        }
+        r.position[0] %= wide;
+        r.position[1] %= tall;
+        return r;
+    });
+}
+
+function runSteps(
+    robots: Robot[],
+    wide: number,
+    tall: number,
+    times: number,
+): Robot[] {
+    for (let i = 0; i < times; i++) {
+        robots = runStep(robots, wide, tall);
+    }
+    return robots;
+}
+
+function animRobots(robots: Robot[], wide: number, tall: number): void {
+    let sec = 1;
+    setInterval(() => {
+        robots = runStep(robots, wide, tall);
+        console.clear();
+        console.log(toString(robots, wide, tall));
+        console.log(sec++);
     }, 100);
 }
 
-function getSaftyFactor(input: string): number {
-    const wide = 101;
-    const tall = 103;
-    const seconds = 100;
-    const robots = input.split("\n").map((line) => {
-        const [x, y, vx, vy] = line.match(/-?\d+/g)!.map(Number);
-        return { position: [x, y], velocity: [vx, vy] } as Robot;
-    });
-    for (let i = 0; i < seconds; i++) {
-        for (const robot of robots) {
-            robot.position[0] += robot.velocity[0];
-            robot.position[1] += robot.velocity[1];
-            if (robot.position[0] < 0) {
-                robot.position[0] = wide + robot.position[0];
-            }
-            if (robot.position[1] < 0) {
-                robot.position[1] = tall + robot.position[1];
-            }
-            robot.position[0] %= wide;
-            robot.position[1] %= tall;
-        }
-    }
+function getSaftyFactor(
+    robots: Robot[],
+    wide: number,
+    tall: number,
+    seconds: number,
+): number {
+    robots = runSteps(robots, wide, tall, seconds);
     const a = robots.filter((robot) =>
         robot.position[0] < (wide - 1) / 2 &&
         robot.position[1] < (tall - 1) / 2
@@ -85,54 +97,52 @@ function getSaftyFactor(input: string): number {
     return a * b * c * d;
 }
 
-function showRobots(input: string, sec: number): void {
-    const wide = 101;
-    const tall = 103;
-    const seconds = sec;
-    const robots = input.split("\n").map((line) => {
-        const [x, y, vx, vy] = line.match(/-?\d+/g)!.map(Number);
-        return { position: [x, y], velocity: [vx, vy] } as Robot;
-    });
-    for (let i = 0; i < seconds; i++) {
-        for (const robot of robots) {
-            robot.position[0] += robot.velocity[0];
-            robot.position[1] += robot.velocity[1];
-            if (robot.position[0] < 0) {
-                robot.position[0] = wide + robot.position[0];
-            }
-            if (robot.position[1] < 0) {
-                robot.position[1] = tall + robot.position[1];
-            }
-            robot.position[0] %= wide;
-            robot.position[1] %= tall;
+function operateRobots(robots: Robot[], wide: number, tall: number): void {
+    const robots0 = robots;
+    let counter = 0;
+    while (true) {
+        counter++;
+        robots = runStep(robots, wide, tall);
+        console.clear();
+        console.log(toString(robots, wide, tall));
+        console.log(counter);
+        const string = prompt("Enter seconds(q: end):");
+        if (string === "q") {
+            break;
         }
+        const num = Number(string);
+        if (isNaN(num)) {
+            continue;
+        }
+        if (num < 0) {
+            robots = robots0;
+            const c = Math.max(0, counter + num - 1);
+            robots = runSteps(robots, wide, tall, c);
+            counter = c;
+            continue;
+        }
+        const c = num;
+        robots = runSteps(robots, wide, tall, c);
+        counter += c;
     }
-    console.log(
-        Array.from(
-            { length: tall },
-            (_, y) =>
-                Array.from(
-                    { length: wide },
-                    (_, x) =>
-                        robots.some(
-                                (robot) =>
-                                    robot.position[0] === x &&
-                                    robot.position[1] === y,
-                            )
-                            ? "#"
-                            : " ",
-                ).join(""),
-        ).join("\n"),
-    );
 }
 
 if (import.meta.main) {
     const input = await Deno.readTextFile("input.txt");
-    console.log(`SaftyFactor: ${getSaftyFactor(input)}`);
+    const robots = parseInput(input);
+    const wide = 101;
+    const tall = 103;
+    console.log(`SaftyFactor: ${getSaftyFactor(robots, wide, tall, 100)}`);
     const sec = Number(Deno.args[0]);
     if (isNaN(sec)) {
-        animRobots(input);
+        if (Deno.args[0] === "anim") {
+            animRobots(robots, wide, tall);
+        }
+        if (Deno.args[0] === "op") {
+            operateRobots(robots, wide, tall);
+        }
     } else {
-        showRobots(input, sec);
+        console.log(toString(runSteps(robots, wide, tall, sec), wide, tall));
+        console.log(sec);
     }
 }
