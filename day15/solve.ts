@@ -104,6 +104,26 @@ function printMap(map: string[][]): void {
     console.log(map.map((row) => row.join("")).join("\n"));
 }
 
+function canStepTwice(
+    map: string[][],
+    direction: Direction,
+    x: number,
+    y: number,
+): boolean {
+    const mark = map[y][x];
+    if (mark === "#" || mark === ".") {
+        return mark === ".";
+    }
+    if (["[", "]"].includes(mark) && ["^", "v"].includes(direction)) {
+        const np = nextPosition(x, y, direction);
+        const dx = mark === "[" ? 1 : -1;
+        return canStepTwice(map, direction, np.x, np.y) &&
+            canStepTwice(map, direction, np.x + dx, np.y);
+    }
+    const np = nextPosition(x, y, direction);
+    return canStepTwice(map, direction, np.x, np.y);
+}
+
 function runStepTwice(
     map: string[][],
     direction: Direction,
@@ -115,6 +135,9 @@ function runStepTwice(
         return map;
     }
     if (["[", "]"].includes(mark) && ["^", "v"].includes(direction)) {
+        if (!canStepTwice(map, direction, x, y)) {
+            return map;
+        }
         const np = nextPosition(x, y, direction);
         const dx = mark === "[" ? 1 : -1;
         map = runStepTwice(map, direction, np.x, np.y);
@@ -124,9 +147,6 @@ function runStepTwice(
             np.x + dx,
             np.y,
         );
-        if (map[np.y][np.x] !== "." || map[np.y][np.x + dx] !== ".") {
-            return map;
-        }
         map[y][x] = ".";
         map[y][x + dx] = ".";
         map[np.y][np.x] = mark;
@@ -168,9 +188,8 @@ if (import.meta.main) {
     let { map, directions } = parseInput(text);
     map = run(map, directions);
     console.log(`SumOfGPS: ${getSumOfGPS(map)}`);
-    ({ map, directions } = parseInputTwice(
-        text,
-    ));
+    ({ map, directions } = parseInputTwice(text));
     map = runTwice(map, directions);
+    printMap(map);
     console.log(`SumOfGPSTwice: ${getSumOfGPSTwice(map)}`);
 }
