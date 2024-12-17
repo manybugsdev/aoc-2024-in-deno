@@ -1,12 +1,5 @@
 type Direction = "^" | "v" | "<" | ">";
 
-type Cell = {
-    x: number;
-    y: number;
-    mark: string;
-    moved: boolean;
-};
-
 function parseInput(
     input: string,
 ): { map: string[][]; directions: Direction[] } {
@@ -35,69 +28,59 @@ function nextPosition(
     }
 }
 
-function step(cell: Cell, direction: Direction, cells: Cell[]): Cell {
-    const { mark, x, y } = cell;
-    const d = direction;
-    if (mark === "#") {
-        return cell;
+function getRobotPosition(map: string[][]): { x: number; y: number } {
+    return map.flatMap((row, y) => row.map((mark, x) => ({ x, y, mark }))).find(
+        ({ mark }) => mark === "@",
+    )!;
+}
+
+function runStep(
+    map: string[][],
+    direction: Direction,
+    x: number,
+    y: number,
+): string[][] {
+    const mark = map[y][x];
+    if (mark === "#" || mark === ".") {
+        return map;
     }
-    if (mark === ".") {
-        return {
-            mark,
-            moved: true,
-            x: x + (d === "<" ? 1 : d === ">" ? -1 : 0),
-            y: y + (d === "^" ? 1 : d === "v" ? -1 : 0),
-        };
+    // O or @
+    const np = nextPosition(x, y, direction);
+    map = runStep(map, direction, np.x, np.y);
+    const nmark = map[np.y][np.x];
+    if (nmark !== ".") {
+        return map;
     }
-    if (mark === "O" || mark === "@") {
-        const np = nextPosition(x, y, direction);
-        const nextCell = cells.find((c) => c.x === np.x && cell.y === np.y);
-        if (!nextCell || nextCell.moved) {
-            return {
-                mark,
-                moved: true,
-                x: np.x,
-                y: np.y,
-            };
-        }
-        return {
-            mark,
-            moved: false,
-            x,
-            y,
-        };
-    }
-    return cell;
+    map[y][x] = ".";
+    map[np.y][np.x] = mark;
+    return map;
 }
 
 function run(map: string[][], directions: Direction[]): string[][] {
-    const cells = map.flatMap((row, y) =>
-        row.map((mark, x) => ({ x, y, mark, moved: false }))
-    );
-    let robot: Cell = cells.find((cell) => cell.mark === "@")!;
-    for (const d of directions) {
-        robot = step(robot, d, cells);
+    for (const direction of directions) {
+        const { x, y } = getRobotPosition(map);
+        map = runStep(map, direction, x, y);
     }
-    return cells.reduce((map, cell) => {
-        map[cell.y][cell.x] = cell.mark;
-        return map;
-    }, map.map((row) => [...row]));
+    return map;
 }
 
 function getSumOfGPS(map: string[][]): number {
     return map.reduce(
         (sum, r, y) =>
             r.reduce(
-                (sum, mark, x) => sum + mark === "O" ? 100 * y + x : 0,
+                (sum, mark, x) => sum + (mark === "O" ? 100 * y + x : 0),
                 sum,
             ),
         0,
     );
 }
 
+function printMap(map: string[][]): void {
+    console.log(map.map((row) => row.join("")).join("\n"));
+}
+
 if (import.meta.main) {
     let { map, directions } = parseInput(await Deno.readTextFile("input.txt"));
     map = run(map, directions);
-    console.log(map.map((row) => row.join("")).join("\n"));
     console.log(`SumOfGPS: ${getSumOfGPS(map)}`);
 }
