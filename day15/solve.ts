@@ -109,46 +109,45 @@ function runStepTwice(
     direction: Direction,
     x: number,
     y: number,
-): [string[][], boolean] {
+): string[][] {
     const mark = map[y][x];
     if (mark === "#" || mark === ".") {
-        return [map, mark === "."];
+        return map;
     }
     if (["[", "]"].includes(mark) && ["^", "v"].includes(direction)) {
         const np = nextPosition(x, y, direction);
         const dx = mark === "[" ? 1 : -1;
-        let s1: boolean, s2: boolean;
-        [map, s1] = runStepTwice(map, direction, np.x, np.y);
-        [map, s2] = runStepTwice(
+        map = runStepTwice(map, direction, np.x, np.y);
+        map = runStepTwice(
             map,
             direction,
             np.x + dx,
             np.y,
         );
-        if (!s1 || !s2) {
-            return [map, false];
+        if (map[np.y][np.x] !== "." || map[np.y][np.x + dx] !== ".") {
+            return map;
         }
         map[y][x] = ".";
         map[y][x + dx] = ".";
         map[np.y][np.x] = mark;
         map[np.y][np.x + dx] = mark === "[" ? "]" : "[";
-        return [map, true];
+        return map;
     }
     const np = nextPosition(x, y, direction);
-    [map] = runStepTwice(map, direction, np.x, np.y);
+    map = runStepTwice(map, direction, np.x, np.y);
     const nmark = map[np.y][np.x];
     if (nmark !== ".") {
-        return [map, false];
+        return map;
     }
     map[y][x] = ".";
     map[np.y][np.x] = mark;
-    return [map, true];
+    return map;
 }
 
 function runTwice(map: string[][], directions: Direction[]): string[][] {
     for (const direction of directions) {
         const { x, y } = getRobotPosition(map);
-        [map] = runStepTwice(map, direction, x, y);
+        map = runStepTwice(map, direction, x, y);
     }
     return map;
 }
