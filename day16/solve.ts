@@ -1,6 +1,8 @@
 import { BinaryHeap } from "jsr:@std/data-structures";
 
-type Direction = "^" | "v" | "<" | ">";
+const DIRECTION = ["^", "v", "<", ">"] as const;
+
+type Direction = typeof DIRECTION[number];
 
 type Position = {
     x: number;
@@ -11,6 +13,8 @@ type Node = Position & {
     score: number;
     direction: Direction;
 };
+
+type ScoreMap = Record<Direction, number>[][];
 
 function parseInput(input: string): string[][] {
     return input.split("\n").map((line) => line.split(""));
@@ -60,18 +64,26 @@ function around(node: Node): Node[] {
     ];
 }
 
-function getStartPosition(map: string[][]): Position | undefined {
+function getPosition(map: string[][], mark: string): Position {
     return map.flatMap((row, y) => row.map((mark, x) => ({ x, y, mark })))
-        .find(({ mark }) => mark === "S");
+        .find((n) => n.mark === mark)!;
 }
 
-function getEndPosition(map: string[][]): Position | undefined {
-    return map.flatMap((row, y) => row.map((mark, x) => ({ x, y, mark })))
-        .find(({ mark }) => mark === "E");
+function from(node: Node, scoreMap: ScoreMap): Node[] {
+    return around(node).flatMap((an) =>
+        DIRECTION.map((direction) => ({
+            ...an,
+            direction,
+            score: scoreMap[an.y][an.x][direction],
+        })).filter((n) => isFinite(n.score)).filter((n) =>
+            n.score + getTurnScore(n.direction, node.direction) + 1 ===
+                node.score
+        )
+    );
 }
 
-function getMinScore(map: string[][]): number {
-    const scoreMap: Record<Direction, number>[][] = map.map((row) =>
+function getScoreMap(map: string[][]): ScoreMap {
+    const scoreMap: ScoreMap = map.map((row) =>
         row.map(() => ({
             "^": Infinity,
             "v": Infinity,
@@ -79,14 +91,7 @@ function getMinScore(map: string[][]): number {
             ">": Infinity,
         }))
     );
-    const sp = getStartPosition(map);
-    if (!sp) {
-        throw new Error("No start position found");
-    }
-    const ep = getEndPosition(map);
-    if (!ep) {
-        throw new Error("No end position found");
-    }
+    const sp = getPosition(map, "S");
     const heap = new BinaryHeap<Node>(
         (a, b) => a.score - b.score,
     );
@@ -104,6 +109,12 @@ function getMinScore(map: string[][]): number {
             heap.push(an);
         }
     }
+    return scoreMap;
+}
+
+function getMinScore(map: string[][]): number {
+    const scoreMap = getScoreMap(map);
+    const ep = getPosition(map, "E");
     return Math.min(
         scoreMap[ep.y][ep.x]["^"],
         scoreMap[ep.y][ep.x]["v"],
@@ -112,8 +123,36 @@ function getMinScore(map: string[][]): number {
     );
 }
 
+function printMap(map: string[][]): void {
+    console.log(map.map((row) => row.join("")).join("\n"));
+}
+
+function getPathMap(map: string[][], scoreMap: ScoreMap): string[][] {
+    const pathMap = scoreMap.map((row) => row.map(() => "."));
+    const ep = getPosition(map, "E");
+    const en: Node = DIRECTION.map((direction) => ({
+        ...ep,
+        direction,
+        score: scoreMap[ep.y][ep.x][direction],
+    })).reduce((a, v) => a.score < v.score ? a : v);
+    const nodes = [en];
+    while (nodes.length) {
+        const node = nodes.pop()!;
+        pathMap[node.y][node.x] = "O";
+        nodes.push(...from(node, scoreMap));
+    }
+    return pathMap;
+}
+
+function getTiles(map: string[][]): number {
+    const scoreMap = getScoreMap(map);
+    const pathMap = getPathMap(map, scoreMap);
+    return pathMap.flat().filter((s) => s === "O").length;
+}
+
 if (import.meta.main) {
     const inputText = await Deno.readTextFile("input.txt");
     const map = parseInput(inputText);
     console.log(`MinScore: ${getMinScore(map)}`);
+    console.log(`Tiles: ${getTiles(map)}`);
 }
