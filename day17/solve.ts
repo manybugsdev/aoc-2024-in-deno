@@ -22,7 +22,9 @@ function parseInput(
 }
 
 function run(instructions: number[], registers: number[]): string {
-    let out: string[] = [];
+    instructions = [...instructions];
+    registers = [...registers];
+    const out: string[] = [];
     let o = "";
     let p = 0;
     for (let pointer = 0; pointer < instructions.length; pointer = p) {
@@ -68,8 +70,39 @@ function step(
     }
 }
 
+function testProgram(
+    instructions: number[],
+    registers: number[],
+    output: string,
+): boolean {
+    return run(instructions, registers) === output;
+}
+
+function getValidAList(
+    instructions: number[],
+    output: number[],
+): number[] {
+    if (output.length === 0) {
+        return [0];
+    }
+    return getValidAList(instructions, output.slice(1))
+        .flatMap((
+            a,
+        ) => Array.from({ length: 8 }, (_, i) => 8 * a + i).filter((a) => {
+            return testProgram(
+                instructions,
+                [0, 1, 2, 3, a, 0, 0, 0],
+                output.join(","),
+            );
+        }));
+}
+
 if (import.meta.main) {
     const inputText = await Deno.readTextFile("input.txt");
     const { registers, instructions } = parseInput(inputText);
-    console.log(`Output: ${run(instructions, registers)}`);
+    const output = run(instructions, registers);
+    console.log(`Output: ${output}`);
+    console.log(
+        `Valid A List: ${getValidAList(instructions, instructions)}`,
+    );
 }
