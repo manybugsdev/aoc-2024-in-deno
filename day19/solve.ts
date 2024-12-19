@@ -19,8 +19,33 @@ function countPossibles(avails: string[], desires: string[]): number {
     );
 }
 
+function getPatterns(
+    avails: string[],
+    desire: string,
+    cache: Map<string, number> = new Map(),
+): number {
+    if (!desire) {
+        return 1;
+    }
+    const cached = cache.get(desire);
+    if (cached) {
+        return cached;
+    }
+    const value = avails.filter((avail) => desire.startsWith(avail)).reduce(
+        (sum, avail) => sum + getPatterns(avails, desire.slice(avail.length)),
+        0,
+    );
+    cache.set(desire, value);
+    return avails.filter((avail) => desire.startsWith(avail)).reduce(
+        (sum, avail) =>
+            sum + getPatterns(avails, desire.slice(avail.length), cache),
+        0,
+    );
+}
+
 if (import.meta.main) {
     const text = await Deno.readTextFile("input.txt");
     const [avails, desires] = parseInput(text);
     console.log(`Possibles: ${countPossibles(avails, desires)}`);
+    console.log(`Patterns: ${getPatterns(avails, desires[0])}`);
 }
