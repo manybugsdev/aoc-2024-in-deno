@@ -68,4 +68,10 @@ if (import.meta.main) {
     const map = getMap(blocks.slice(0, 1024), 71);
     const path = getShortestPath(map);
     console.log(`Steps: ${path.length - 1}`);
+    for (let i = 1025; i < blocks.length; i++) {
+        if (getShortestPath(getMap(blocks.slice(0, i), 71)).length === 0) {
+            console.log(`Blocks: ${blocks[i - 1]}`);
+            break;
+        }
+    }
 }
