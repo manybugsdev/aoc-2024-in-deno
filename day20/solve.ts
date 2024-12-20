@@ -1,23 +1,24 @@
 function around(
     [x, y]: [number, number],
+    dist: number = 1,
 ): [number, number][] {
-    return [
-        [x - 1, y],
-        [x + 1, y],
-        [x, y - 1],
-        [x, y + 1],
-    ];
-}
-
-function aroundDouble(
-    [x, y]: [number, number],
-): [number, number][] {
-    return [
-        [x - 2, y],
-        [x + 2, y],
-        [x, y - 2],
-        [x, y + 2],
-    ];
+    if (dist === 0) {
+        return [[x, y]];
+    }
+    const a = around([x, y], dist - 1);
+    const b: [number, number][] = [[x - dist, y]];
+    for (let i = 1; i < dist; i++) {
+        b.push([x - dist + i, y - i]);
+        b.push([x - dist + i, y + i]);
+    }
+    b.push([x, y - dist]);
+    b.push([x, y + dist]);
+    for (let i = 1; i < dist; i++) {
+        b.push([x + i, y - dist + i]);
+        b.push([x + i, y + dist - i]);
+    }
+    b.push([x + dist, y]);
+    return a.concat(b);
 }
 
 function parseInput(input: string): string[][] {
@@ -62,7 +63,7 @@ function getSaveList(distMap: number[][]) {
     const [ex, ey] = getPosition(distMap, max)!;
     while (!(x === ex && y === ey)) {
         const d = distMap[y][x];
-        for (const [ax, ay] of aroundDouble([x, y])) {
+        for (const [ax, ay] of around([x, y], 20)) {
             const ad = distMap[ay]?.[ax];
             if (!isFinite(ad)) {
                 continue;
