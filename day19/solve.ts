@@ -19,7 +19,7 @@ function countPossibles(avails: string[], desires: string[]): number {
     );
 }
 
-function getPatterns(
+function countPatterns(
     avails: string[],
     desire: string,
     cache: Map<string, number> = new Map(),
@@ -32,13 +32,17 @@ function getPatterns(
         return cached;
     }
     const value = avails.filter((avail) => desire.startsWith(avail)).reduce(
-        (sum, avail) => sum + getPatterns(avails, desire.slice(avail.length)),
+        (sum, avail) =>
+            sum + countPatterns(avails, desire.slice(avail.length), cache),
         0,
     );
     cache.set(desire, value);
-    return avails.filter((avail) => desire.startsWith(avail)).reduce(
-        (sum, avail) =>
-            sum + getPatterns(avails, desire.slice(avail.length), cache),
+    return value;
+}
+
+function countAllPatterns(avails: string[], desires: string[]): number {
+    return desires.reduce(
+        (count, desire) => count + countPatterns(avails, desire),
         0,
     );
 }
@@ -47,5 +51,5 @@ if (import.meta.main) {
     const text = await Deno.readTextFile("input.txt");
     const [avails, desires] = parseInput(text);
     console.log(`Possibles: ${countPossibles(avails, desires)}`);
-    console.log(`Patterns: ${getPatterns(avails, desires[0])}`);
+    console.log(`Patterns: ${countAllPatterns(avails, desires)}`);
 }
