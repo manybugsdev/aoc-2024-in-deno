@@ -21,6 +21,10 @@ function around(
     return a.concat(b);
 }
 
+function distance([x1, y1]: [number, number], [x2, y2]: [number, number]) {
+    return Math.abs(x1 - x2) + Math.abs(y1 - y2);
+}
+
 function parseInput(input: string): string[][] {
     return input.split("\n").map((line) => line.split(""));
 }
@@ -57,7 +61,7 @@ function getDistMap(map: string[][]): number[][] {
 }
 
 function getSaveList(distMap: number[][]) {
-    const list: number[] = [];
+    const list: number[][] = [];
     const max = Math.max(...distMap.flat().filter(isFinite));
     let [x, y] = getPosition(distMap, 0)!;
     const [ex, ey] = getPosition(distMap, max)!;
@@ -68,11 +72,11 @@ function getSaveList(distMap: number[][]) {
             if (!isFinite(ad)) {
                 continue;
             }
-            const save = ad - d - 2;
+            const save = ad - d - distance([x, y], [ax, ay]);
             if (save <= 0) {
                 continue;
             }
-            list.push(save);
+            list.push([save, x, y, ax, ay]);
         }
         [x, y] = around([x, y]).find((
             [nx, ny],
@@ -87,7 +91,7 @@ if (import.meta.main) {
     const distMap = getDistMap(map);
     console.log(
         `Cheats(>=100ps) Count: ${
-            getSaveList(distMap).filter((s) => s >= 100).length
+            getSaveList(distMap).filter(([s]) => s >= 100).length
         }`,
     );
 }
