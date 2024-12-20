@@ -52,11 +52,11 @@ function getDistMap(map: string[][]): number[][] {
             }
         }
     }
-    dmap[y][x] = d;
     return dmap;
 }
 
-function getSaveList(distMap: number[][], list: number[] = []) {
+function getSaveList(distMap: number[][]) {
+    const list: number[] = [];
     const max = Math.max(...distMap.flat().filter(isFinite));
     let [x, y] = getPosition(distMap, 0)!;
     const [ex, ey] = getPosition(distMap, max)!;
@@ -73,10 +73,9 @@ function getSaveList(distMap: number[][], list: number[] = []) {
             }
             list.push(save);
         }
-
-        [x, y] = around([x, y]).find(([nx, ny]) =>
-            distMap[ny]?.[nx] === d + 1
-        )!;
+        [x, y] = around([x, y]).find((
+            [nx, ny],
+        ) => (distMap[ny]?.[nx] === d + 1))!;
     }
     return list;
 }
@@ -85,5 +84,9 @@ if (import.meta.main) {
     const text = await Deno.readTextFile("input.txt");
     const map = parseInput(text);
     const distMap = getDistMap(map);
-    console.log(getSaveList(distMap));
+    console.log(
+        `Cheats(>=100ps) Count: ${
+            getSaveList(distMap).filter((s) => s >= 100).length
+        }`,
+    );
 }
